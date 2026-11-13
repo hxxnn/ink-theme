@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bleed-palette demo</title>
+<link rel="stylesheet" href="demo.css">
+<script src="../dist/bleed-palette.js"></script>
+<script src="demo.js" defer></script>
+</head>
+<body>
+  <main class="page">
+    <h1>bleed-palette</h1>
+    <p class="lead">Pick a colour. The ink spreads from where you click.</p>
+
+    <div class="palette" id="palette" role="group" aria-label="Palette"></div>
+
+    <div class="card">
+      <h2>Card</h2>
+      <p>Text, accent colour and surfaces all follow the palette.</p>
+      <button class="cta" type="button">Accent button</button>
+    </div>
+
+    <fieldset class="options">
+      <legend>Page effects</legend>
+      <label><input type="checkbox" id="glass"> Glass cards (backdrop-filter)</label>
+      <label><input type="checkbox" id="gradient"> Gradient background</label>
+      <label><input type="checkbox" id="image"> Image background</label>
+      <label>Free colour (applies instantly, no ink): <input type="color" id="picker" value="#f4efe6"></label>
+    </fieldset>
+  </main>
+</body>
+</html>
