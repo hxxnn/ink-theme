@@ -24,11 +24,12 @@
     sheetInstalled = true;
     if (!('adoptedStyleSheets' in document) || typeof CSSStyleSheet === 'undefined') return;
     var sheet = new CSSStyleSheet();
+    // Scoped to .bp-run so the host site's own view transitions are left alone between our runs.
     sheet.replaceSync(
-      '::view-transition-group(root),::view-transition-image-pair(root),::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}' +
-      '::view-transition-new(root){clip-path:var(--bp-clip)}' +
-      '::view-transition-group(bp-overlay),::view-transition-old(bp-overlay),::view-transition-new(bp-overlay){animation:none}' +
-      '::view-transition-old(bp-overlay){display:none}'
+      ':root.bp-run::view-transition-group(root),:root.bp-run::view-transition-image-pair(root),:root.bp-run::view-transition-old(root),:root.bp-run::view-transition-new(root){animation:none;mix-blend-mode:normal}' +
+      ':root.bp-run::view-transition-new(root){clip-path:var(--bp-clip)}' +
+      ':root.bp-run::view-transition-group(bp-overlay),:root.bp-run::view-transition-old(bp-overlay),:root.bp-run::view-transition-new(bp-overlay){animation:none}' +
+      ':root.bp-run::view-transition-old(bp-overlay){display:none}'
     );
     document.adoptedStyleSheets = document.adoptedStyleSheets.concat([sheet]);
   }
@@ -77,6 +78,7 @@
     run.overlay = null;
     if (current === run) {
       document.documentElement.style.removeProperty('--bp-clip');
+      document.documentElement.classList.remove('bp-run');
       current = null;
     }
   }
@@ -92,8 +94,10 @@
     if (!isSupported() || reduced) return applyNow(applyFn);
 
     installSheet();
+    var prevDone = Promise.resolve();
     if (current) {
       var prev = current;
+      prevDone = prev.vt.updateCallbackDone.catch(function () {});
       try { prev.vt.skipTransition(); } catch (e) { /* already finished */ }
       cleanup(prev);
       current = null;
@@ -106,9 +110,11 @@
     var run = { raf: 0, keep: null, overlay: null, vt: null };
     current = run;
     run.overlay = makeOverlay();
+    document.documentElement.classList.add('bp-run');
     document.documentElement.style.setProperty('--bp-clip', "path('" + shapeLib.toPath(shape.at(0)) + "')");
 
-    run.vt = document.startViewTransition(function () { return applyFn(); });
+    // Wait for an interrupted run's update callback first, so a slower earlier applyFn cannot land after this one.
+    run.vt = document.startViewTransition(function () { return prevDone.then(function () { return applyFn(); }); });
     run.vt.updateCallbackDone.catch(function () {});
 
     run.vt.ready.then(function () {

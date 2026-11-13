@@ -36,6 +36,7 @@ swatch.addEventListener('click', (e) => {
 ## Good to know
 
 - Use it for discrete choices (clicking a swatch). For continuous input such as dragging a colour picker or slider, apply colours directly; animating every event would be slow.
+- Elements that already have their own `view-transition-name` keep the browser's default cross-fade instead of being revealed by the ink (only the page root is). Avoid named elements during a palette change, or remove the name while `run` is active.
 - A new `run` during a running transition skips the old one; the last colour wins.
 - Works under a strict CSP (`img-src 'self' data:`, no `unsafe-inline`): styles are applied through adopted stylesheets and CSSOM, and no blob URLs are used.
 - Browsers: those with `document.startViewTransition` (current Chrome/Edge, Safari 18+, recent Firefox).

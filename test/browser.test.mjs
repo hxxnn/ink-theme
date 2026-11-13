@@ -164,3 +164,27 @@ test('mid-transition only part of the page shows the new colour', async () => {
   assert.ok(px.farCorner[1] > 200, `far corner should still be white, got ${px.farCorner}`);
   await ctx.close();
 });
+
+test('a slower async applyFn from an earlier run cannot overwrite the last colour', async () => {
+  const { page, ctx } = await open();
+  await page.evaluate(async () => {
+    const a = BleedPalette.run(() => new Promise((r) => setTimeout(() => { setBg('#ff0000'); r(); }, 300)), { duration: 300 });
+    await new Promise((r) => setTimeout(r, 30));
+    const b = BleedPalette.run(() => setBg('#0000ff'), { duration: 300 });
+    await Promise.all([a, b]);
+  });
+  assert.equal(await bg(page), 'rgb(0, 0, 255)');
+  await ctx.close();
+});
+
+test("the site's own view transitions keep their animations after a run", async () => {
+  const { page, ctx } = await open('/test/fixtures/own-vt.html');
+  await page.evaluate(() => BleedPalette.run(() => setBg('#00ff00'), { duration: 200 }));
+  const ms = await page.evaluate(async () => {
+    const t0 = performance.now();
+    await document.startViewTransition(() => setBg('#0000ff')).finished;
+    return performance.now() - t0;
+  });
+  assert.ok(ms > 500, `own transition finished in ${ms}ms, expected about 700ms`);
+  await ctx.close();
+});

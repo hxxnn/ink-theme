@@ -1,0 +1,8 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>own view transitions</title>
+<style>html,body{margin:0;height:100%}body{background:var(--bg,#ffffff);min-height:100vh}
+::view-transition-group(root){animation-duration:700ms}</style>
+<script src="/dist/bleed-palette.js"></script></head>
+<body><p>hello</p>
+<script>window.setBg = function (c) { document.documentElement.style.setProperty('--bg', c); };</script>
+</body></html>
