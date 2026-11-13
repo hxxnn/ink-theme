@@ -1,0 +1,12 @@
+{
+  "name": "bleed-palette",
+  "version": "0.1.0",
+  "description": "Ink-bleed colour transitions for palette pickers, built on the View Transitions API.",
+  "type": "commonjs",
+  "main": "dist/bleed-palette.js",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/"
+  },
+  "license": "MIT"
+}
