@@ -6,7 +6,7 @@
   "main": "dist/bleed-palette.js",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test test/"
+    "test": "node --test \"test/*.test.*\""
   },
   "license": "MIT"
 }
