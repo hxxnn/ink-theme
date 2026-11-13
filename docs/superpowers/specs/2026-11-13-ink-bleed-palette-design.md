@@ -72,5 +72,7 @@ InkBleed.supported // boolean
 - `README.md`(사용법, 지원 브라우저, 권장/비권장), `LICENSE`(MIT, 본인 이름만).
 - 검증: 모양 함수의 단위 테스트(같은 시드 → 같은 결과, 마지막에 화면 전체 덮음), Playwright(Chromium)로 데모 실행 후 transition이 끝나고 최종 화면이 새 색인지 확인.
 
-## 미정 (사용자 확인 필요)
-- MIT 저작권자 이름, 플러그인(패키지) 이름.
+## 확정 사항
+- 플러그인 이름: `bleed-palette` (전역 객체 이름은 `InkBleed`가 아니라 `BleedPalette`로 쓴다. 위 문서의 `InkBleed`는 모두 `BleedPalette`로 읽는다).
+- MIT 저작권자: `hxxnn` (사용자의 GitHub 아이디. 이 저장소의 소유자 이름에서 가져옴), 연도 2026.
+- 상태: 사용자 승인 완료 (2026-11-13).
