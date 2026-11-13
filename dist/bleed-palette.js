@@ -174,9 +174,12 @@
     document.adoptedStyleSheets = document.adoptedStyleSheets.concat([sheet]);
   }
 
+  // Opaque-enough rgb(a) colour as [r, g, b], else null (transparent, or a syntax we do not parse).
   function rgbOf(str) {
-    var m = /rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/.exec(str || '');
-    return m ? [+m[1], +m[2], +m[3]] : null;
+    var m = /rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)(?:[\s,/]+([\d.]+%?))?/.exec(str || '');
+    if (!m) return null;
+    var a = m[4] === undefined ? 1 : m[4].slice(-1) === '%' ? parseFloat(m[4]) / 100 : parseFloat(m[4]);
+    return a > 0.05 ? [+m[1], +m[2], +m[3]] : null;
   }
   function hex2(n) { n = Math.max(0, Math.min(255, Math.round(n))); return (n < 16 ? '0' : '') + n.toString(16); }
 
@@ -185,7 +188,10 @@
     if (typeof option === 'string' && HEX.test(option)) return option;
     var cssVar = getComputedStyle(document.documentElement).getPropertyValue('--ink-bleed-color').trim();
     if (HEX.test(cssVar)) return cssVar;
-    var rgb = rgbOf(getComputedStyle(document.body || document.documentElement).backgroundColor) || [128, 128, 128];
+    var rgb =
+      rgbOf(getComputedStyle(document.body || document.documentElement).backgroundColor) ||
+      rgbOf(getComputedStyle(document.documentElement).backgroundColor) ||
+      [128, 128, 128];
     var lum = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
     var k = lum > 0.5 ? 0.78 : 1.35; // darker on light pages, lighter on dark ones
     var out = rgb.map(function (v) { return lum > 0.5 ? v * k : v * k + 24; });
@@ -249,12 +255,17 @@
     var shape = shapeLib.createShape(seed, view);
     var run = { raf: 0, keep: null, overlay: null, vt: null };
     current = run;
-    run.overlay = makeOverlay();
-    document.documentElement.classList.add('bp-run');
-    document.documentElement.style.setProperty('--bp-clip', "path('" + shapeLib.toPath(shape.at(0)) + "')");
+    try {
+      run.overlay = makeOverlay();
+      document.documentElement.classList.add('bp-run');
+      document.documentElement.style.setProperty('--bp-clip', "path('" + shapeLib.toPath(shape.at(0)) + "')");
 
-    // Wait for an interrupted run's update callback first, so a slower earlier applyFn cannot land after this one.
-    run.vt = document.startViewTransition(function () { return prevDone.then(function () { return applyFn(); }); });
+      // Wait for an interrupted run's update callback first, so a slower earlier applyFn cannot land after this one.
+      run.vt = document.startViewTransition(function () { return prevDone.then(function () { return applyFn(); }); });
+    } catch (err) {
+      cleanup(run);
+      return Promise.reject(err);
+    }
     run.vt.updateCallbackDone.catch(function () {});
 
     run.vt.ready.then(function () {
@@ -289,6 +300,10 @@
   }
 
   function pointFrom(source) {
+    // Enter/Space on a button gives a click with detail 0 and clientX/Y 0: use the element's centre instead.
+    if (source && source.detail === 0 && source.currentTarget && typeof source.currentTarget.getBoundingClientRect === 'function') {
+      return pointFrom(source.currentTarget);
+    }
     if (source && typeof source.clientX === 'number') return { x: source.clientX, y: source.clientY };
     if (source && source.changedTouches && source.changedTouches[0]) {
       return { x: source.changedTouches[0].clientX, y: source.changedTouches[0].clientY };
@@ -302,5 +317,5 @@
 
   BP.run = run;
   BP.pointFrom = pointFrom;
-  Object.defineProperty(BP, 'supported', { get: isSupported, enumerable: true });
+  Object.defineProperty(BP, 'supported', { get: isSupported, enumerable: true, configurable: true });
 })(typeof self !== 'undefined' ? self : this);

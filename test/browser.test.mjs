@@ -188,3 +188,60 @@ test("the site's own view transitions keep their animations after a run", async 
   assert.ok(ms > 500, `own transition finished in ${ms}ms, expected about 700ms`);
   await ctx.close();
 });
+
+test('pointFrom uses the element centre for keyboard-activated clicks', async () => {
+  const { page, ctx } = await open();
+  const r = await page.evaluate(() => {
+    const b = document.createElement('button');
+    b.textContent = 'x'; b.style.cssText = 'position:fixed;left:200px;top:300px;width:100px;height:40px';
+    document.body.appendChild(b);
+    let p;
+    b.addEventListener('click', (e) => { p = BleedPalette.pointFrom(e); });
+    b.click(); // detail 0, clientX/Y 0, like Enter or Space
+    return p;
+  });
+  assert.deepEqual(r, { x: 250, y: 320 });
+  await ctx.close();
+});
+
+test('loading the script twice does not throw', async () => {
+  const { page, ctx, errors } = await open();
+  await page.addScriptTag({ url: '/dist/bleed-palette.js' });
+  assert.deepEqual(errors, []);
+  await page.evaluate(() => BleedPalette.run(() => setBg('#00ff00'), { duration: 150 }));
+  assert.equal(await bg(page), 'rgb(0, 255, 0)');
+  await ctx.close();
+});
+
+test('fallback rim colour reads the page background when body is transparent', async () => {
+  const { page, ctx } = await open();
+  await page.evaluate(() => { document.documentElement.style.background = '#fafafa'; document.body.style.background = 'transparent'; });
+  const stroke = await page.evaluate(async () => {
+    const p = BleedPalette.run(() => document.documentElement.style.setProperty('--x', '1'), { duration: 600 });
+    await new Promise((r) => setTimeout(r, 200));
+    const s = document.querySelector('#bp-overlay path').getAttribute('stroke');
+    await p;
+    return s;
+  });
+  const ch = parseInt(stroke.slice(1, 3), 16);
+  assert.ok(ch > 0xa0 && ch < 0xe0, `light page should get a darker light-grey rim, got ${stroke}`);
+  await ctx.close();
+});
+
+test('a synchronous startViewTransition failure rejects and leaves nothing behind', async () => {
+  const ctx = await browser.newContext();
+  await ctx.addInitScript(() => { document.startViewTransition = () => { throw new Error('vt failed'); }; });
+  const page = await ctx.newPage();
+  await page.goto(base + '/test/fixtures/basic.html');
+  const msg = await page.evaluate(async () => {
+    try { await BleedPalette.run(() => setBg('#00ff00'), { duration: 150 }); return 'no error'; }
+    catch (e) { return e.message; }
+  });
+  assert.equal(msg, 'vt failed');
+  assert.deepEqual(await page.evaluate(() => ({
+    overlay: !!document.getElementById('bp-overlay'),
+    cls: document.documentElement.classList.contains('bp-run'),
+    clip: document.documentElement.style.getPropertyValue('--bp-clip'),
+  })), { overlay: false, cls: false, clip: '' });
+  await ctx.close();
+});
