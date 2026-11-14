@@ -67,33 +67,39 @@
 
     var rnd = mulberry32(seed);
     var tendrils = [];
-    for (var i = 0; i < 7; i++) {
-      tendrils.push({ a: rnd() * TAU, w: 0.035 + rnd() * 0.045, len: 0.14 + rnd() * 0.26 });
+    for (var i = 0; i < 11; i++) {
+      tendrils.push({ a: rnd() * TAU, w: 0.03 + rnd() * 0.05, len: 0.12 + rnd() * 0.22, at: 0.08 + rnd() * 0.6 });
     }
     var dropDefs = [];
     for (var j = 0; j < 12; j++) {
       dropDefs.push({ a: rnd() * TAU, r: 1.5 + rnd() * 4.5, off: 3 + rnd() * 20, at: 0.1 + rnd() * 0.3 });
     }
 
-    // Base front: starts slowly like a drop soaking in, then keeps gaining speed. It reaches the farthest
-    // corner right at t = 1, so there is no flat stretch followed by a sweep.
-    function baseR(t) { return maxDist * 1.06 * Math.pow(t, 1.5); }
+    // Each direction has its own head start or delay, so the front breaks into lobes that arrive at
+    // different moments (and never in the same order twice). Every direction still lands by t = 1.
+    var LAG = 0.4;
+    function lagAt(u) {
+      return LAG * (0.5 + 0.5 * (0.6 * pnoise(seed + 3, u, 4, 0) + 0.4 * pnoise(seed + 4, u, 11, 0)));
+    }
+    // Accelerating front: a slow drop at first, then it keeps gaining speed.
+    function frontR(p) { return maxDist * 1.06 * Math.pow(p, 2.2); }
+    function baseR(t) { return frontR(t); }
 
     function radius(theta, t) {
       var u = theta / TAU;
-      var time = t * 2.2;
-      var R = baseR(t);
-      // Irregularity is strongest mid-way and relaxes near the end so every direction lands together.
-      var amp = 1 - step(0.55, 0.95, t);
-      var n =
-        0.3 * pnoise(seed, u, 3, time) + 0.2 * pnoise(seed + 1, u, 7, time * 1.3) + 0.06 * pnoise(seed + 2, u, 19, time * 1.7);
-      var gate = step(0.06, 0.4, t) * (1 - step(0.6, 0.97, t));
+      var lag = lagAt(u);
+      var p = clamp01((t - lag) / (1 - lag));
+      var R = frontR(p);
+      // Fast-changing noise makes the edge surge and stall unpredictably; it relaxes only at the very end.
+      var time = t * 3.2;
+      var amp = 1 - step(0.8, 1, t);
+      var n = 0.22 * pnoise(seed, u, 3, time) + 0.18 * pnoise(seed + 1, u, 7, time * 1.4) + 0.08 * pnoise(seed + 2, u, 19, time * 1.9);
       var spike = 0;
       for (var q = 0; q < tendrils.length; q++) {
         var d = angDist(theta, tendrils[q].a) / tendrils[q].w;
-        spike += tendrils[q].len * Math.exp(-d * d);
+        spike += tendrils[q].len * step(tendrils[q].at, tendrils[q].at + 0.18, t) * Math.exp(-d * d);
       }
-      var r = R * (1 + amp * n + gate * spike);
+      var r = R * (1 + amp * n + spike);
       // Safety net for the final instant only.
       return Math.max(r, maxDist * 1.08 * step(0.97, 1, t));
     }

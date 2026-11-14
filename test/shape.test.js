@@ -95,3 +95,29 @@ test('the last corner is reached at the very end, not early', () => {
     assert.ok(first >= 0.85 && first <= 1, `seed ${seed}: everything covered at t=${first}`);
   }
 });
+
+test('accelerates hard: slow start, much faster finish', () => {
+  const s = createShape(5, VIEW);
+  const m = (t) => meanR(s.at(t).blob, 500, 300);
+  assert.ok(m(0.5) < 0.3 * s.maxDist, 'still under 30% of the way at half time');
+  assert.ok(m(1) - m(0.9) >= 2 * (m(0.4) - m(0.3)), 'last tenth moves at least twice as fast as the 0.3-0.4 stretch');
+});
+
+test('the front stays ragged and unpredictable late in the spread', () => {
+  for (const seed of [1, 5, 9]) {
+    const { blob } = createShape(seed, VIEW).at(0.9);
+    const rs = blob.map(([x, y]) => Math.hypot(x - 500, y - 300));
+    const mean = rs.reduce((a, b) => a + b, 0) / rs.length;
+    assert.ok((Math.max(...rs) - Math.min(...rs)) / mean > 0.25, `seed ${seed}: front is too round at t=0.9`);
+  }
+});
+
+test('different directions finish at different times', () => {
+  const s = createShape(7, VIEW);
+  const finish = (cornerX, cornerY) => {
+    for (let i = 0; i <= 100; i++) if (inside(s.at(i / 100).blob, cornerX, cornerY)) return i / 100;
+    return 1;
+  };
+  const times = [[0, 0], [1000, 0], [0, 600], [1000, 600]].map(([x, y]) => finish(x, y));
+  assert.ok(Math.max(...times) - Math.min(...times) >= 0.03, `corners covered at ${times.join(', ')}`);
+});
