@@ -51,8 +51,20 @@
     document.body.classList.toggle('has-image', on);
   });
 
-  // Dragging a colour input fires many events; apply directly instead of animating each one.
-  document.getElementById('picker').addEventListener('input', function (e) {
-    document.documentElement.style.setProperty('--bg', e.target.value);
+  // The free colour input: dragging inside the picker fires many `input` events, so we ignore those and
+  // spread the ink once, when the colour is confirmed (`change`).
+  function textFor(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    var lum = (0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+    return lum > 0.5 ? '#1d1b19' : '#e8eef2';
+  }
+  var picker = document.getElementById('picker');
+  picker.addEventListener('change', function (e) {
+    var hex = e.target.value;
+    var accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#c4471d';
+    var origin = BleedPalette.pointFrom(picker);
+    BleedPalette.run(function () { apply({ bg: hex, accent: accent, text: textFor(hex) }); }, {
+      x: origin.x, y: origin.y, color: accent, duration: 1000
+    });
   });
 })();

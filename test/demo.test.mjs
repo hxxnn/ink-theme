@@ -66,10 +66,22 @@ test('glass, gradient and image toggles keep the page correct', async () => {
   await ctx.close();
 });
 
-test('the colour input applies instantly without ink', async () => {
-  const { page, ctx } = await openDemo();
+test('the free colour input spreads ink once the colour is chosen', async () => {
+  const { page, ctx, errors } = await openDemo();
   await page.locator('#picker').fill('#336699');
-  assert.equal(await page.evaluate(() => !!document.getElementById('bp-overlay')), false);
+  assert.equal(await page.evaluate(() => !!document.getElementById('bp-overlay')), true, 'ink should start on commit');
+  await page.waitForFunction(() => !document.getElementById('bp-overlay'), null, { timeout: 5000 });
   assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(51, 102, 153)');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('a dark free colour keeps the text readable', async () => {
+  const { page, ctx } = await openDemo();
+  await page.locator('#picker').fill('#101820');
+  await page.waitForFunction(() => !document.getElementById('bp-overlay'), null, { timeout: 5000 });
+  const text = await page.evaluate(() => getComputedStyle(document.querySelector('h1')).color);
+  const [r, g, b] = text.match(/\d+/g).map(Number);
+  assert.ok((r + g + b) / 3 > 150, `text should be light on a dark page, got ${text}`);
   await ctx.close();
 });
