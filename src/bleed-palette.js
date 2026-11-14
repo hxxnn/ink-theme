@@ -109,7 +109,7 @@
       current = null;
     }
 
-    var duration = Number(opts.duration) > 0 ? Number(opts.duration) : 1200;
+    var duration = Number(opts.duration) > 0 ? Number(opts.duration) : 1800;
     var seed = isFinite(opts.seed) ? opts.seed | 0 : (Math.random() * 4294967296) | 0;
     var view = { x: Number(opts.x), y: Number(opts.y), width: root.innerWidth, height: root.innerHeight };
     var shape = shapeLib.createShape(seed, view);

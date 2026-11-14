@@ -67,3 +67,31 @@ test('x/y not finite falls back to the viewport center', () => {
   const { blob } = createShape(1, { x: NaN, y: 'a', width: 800, height: 400 }).at(0);
   for (const [x, y] of blob) assert.ok(Math.hypot(x - 400, y - 200) <= 6);
 });
+
+test('spreads gently at first, like a drop soaking in', () => {
+  const s = createShape(5, VIEW);
+  assert.ok(meanR(s.at(0.25).blob, 500, 300) < 0.2 * s.maxDist);
+});
+
+test('keeps spreading steadily to the end (no stall in the last stretch)', () => {
+  for (const seed of [1, 5, 9]) {
+    const s = createShape(seed, VIEW);
+    const m = (t) => meanR(s.at(t).blob, 500, 300);
+    const early = m(0.4) - m(0.3);
+    for (const [a, b] of [[0.6, 0.7], [0.7, 0.8], [0.8, 0.9], [0.9, 1]]) {
+      assert.ok(m(b) - m(a) >= 0.6 * early, `seed ${seed}: growth over ${a}-${b} stalled`);
+    }
+  }
+});
+
+test('the last corner is reached at the very end, not early', () => {
+  for (const seed of [1, 5, 9, 42]) {
+    const s = createShape(seed, VIEW);
+    let first = null;
+    for (let i = 0; i <= 100 && first === null; i++) {
+      const { blob } = s.at(i / 100);
+      if ([[0, 0], [1000, 0], [0, 600], [1000, 600]].every(([x, y]) => inside(blob, x, y))) first = i / 100;
+    }
+    assert.ok(first >= 0.85 && first <= 1, `seed ${seed}: everything covered at t=${first}`);
+  }
+});

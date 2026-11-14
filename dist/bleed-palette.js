@@ -68,29 +68,34 @@
     var rnd = mulberry32(seed);
     var tendrils = [];
     for (var i = 0; i < 7; i++) {
-      tendrils.push({ a: rnd() * TAU, w: 0.035 + rnd() * 0.04, len: 0.08 + rnd() * 0.16 });
+      tendrils.push({ a: rnd() * TAU, w: 0.035 + rnd() * 0.045, len: 0.14 + rnd() * 0.26 });
     }
     var dropDefs = [];
     for (var j = 0; j < 12; j++) {
       dropDefs.push({ a: rnd() * TAU, r: 1.5 + rnd() * 4.5, off: 3 + rnd() * 20, at: 0.1 + rnd() * 0.3 });
     }
 
+    // Base front: starts slowly like a drop soaking in, then keeps gaining speed. It reaches the farthest
+    // corner right at t = 1, so there is no flat stretch followed by a sweep.
+    function baseR(t) { return maxDist * 1.06 * Math.pow(t, 1.5); }
+
     function radius(theta, t) {
       var u = theta / TAU;
-      var time = t * 2.5;
-      var R = maxDist * 0.75 * (1 - Math.pow(1 - t, 3));
-      var amp = 1 - step(0.7, 1, t);
+      var time = t * 2.2;
+      var R = baseR(t);
+      // Irregularity is strongest mid-way and relaxes near the end so every direction lands together.
+      var amp = 1 - step(0.55, 0.95, t);
       var n =
-        0.2 * pnoise(seed, u, 3, time) + 0.13 * pnoise(seed + 1, u, 7, time * 1.3) + 0.045 * pnoise(seed + 2, u, 19, time * 1.7);
-      var gate = step(0.08, 0.5, t) * (1 - step(0.8, 1, t));
+        0.3 * pnoise(seed, u, 3, time) + 0.2 * pnoise(seed + 1, u, 7, time * 1.3) + 0.06 * pnoise(seed + 2, u, 19, time * 1.7);
+      var gate = step(0.06, 0.4, t) * (1 - step(0.6, 0.97, t));
       var spike = 0;
       for (var q = 0; q < tendrils.length; q++) {
         var d = angDist(theta, tendrils[q].a) / tendrils[q].w;
         spike += tendrils[q].len * Math.exp(-d * d);
       }
       var r = R * (1 + amp * n + gate * spike);
-      // Guarantee: the front sweeps the farthest corner by the end of the animation.
-      return Math.max(r, maxDist * 1.08 * step(0.8, 1, t));
+      // Safety net for the final instant only.
+      return Math.max(r, maxDist * 1.08 * step(0.97, 1, t));
     }
 
     function at(t) {
@@ -102,7 +107,7 @@
       }
       var drops = [];
       if (t > 0.1 && t < 0.9) {
-        var R = maxDist * 0.75 * (1 - Math.pow(1 - t, 3));
+        var R = baseR(t);
         for (var k = 0; k < dropDefs.length; k++) {
           var dd = dropDefs[k], life = step(dd.at, dd.at + 0.15, t) * (1 - step(0.75, 0.9, t));
           var dr = dd.r * life;
@@ -249,7 +254,7 @@
       current = null;
     }
 
-    var duration = Number(opts.duration) > 0 ? Number(opts.duration) : 1200;
+    var duration = Number(opts.duration) > 0 ? Number(opts.duration) : 1800;
     var seed = isFinite(opts.seed) ? opts.seed | 0 : (Math.random() * 4294967296) | 0;
     var view = { x: Number(opts.x), y: Number(opts.y), width: root.innerWidth, height: root.innerHeight };
     var shape = shapeLib.createShape(seed, view);
