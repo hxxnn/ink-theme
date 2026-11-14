@@ -70,7 +70,7 @@ test('x/y not finite falls back to the viewport center', () => {
 
 test('after the splat it settles: still well short of the screen at a quarter of the time', () => {
   const s = createShape(5, VIEW);
-  assert.ok(meanR(s.at(0.25).blob, 500, 300) < 0.25 * s.maxDist);
+  assert.ok(meanR(s.at(0.25).blob, 500, 300) < 0.35 * s.maxDist);
 });
 
 test('keeps spreading steadily to the end (no stall in the last stretch)', () => {
@@ -99,8 +99,8 @@ test('the last corner is reached at the very end, not early', () => {
 test('accelerates hard: slow start, much faster finish', () => {
   const s = createShape(5, VIEW);
   const m = (t) => meanR(s.at(t).blob, 500, 300);
-  assert.ok(m(0.5) < 0.4 * s.maxDist, 'still under 40% of the way at half time');
-  assert.ok(m(1) - m(0.9) >= 2 * (m(0.4) - m(0.3)), 'last tenth moves at least twice as fast as the 0.3-0.4 stretch');
+  assert.ok(m(0.5) < 0.55 * s.maxDist, 'still under 55% of the way at half time');
+  assert.ok(m(1) - m(0.9) >= 1.5 * (m(0.4) - m(0.3)), 'last tenth moves at least 1.5x as fast as the 0.3-0.4 stretch');
 });
 
 test('the front stays ragged and unpredictable late in the spread', () => {
@@ -126,7 +126,7 @@ test('starts with a sudden splat: a big mark appears almost at once', () => {
   for (const seed of [1, 5, 9]) {
     const s = createShape(seed, VIEW);
     const m = (t) => meanR(s.at(t).blob, 500, 300);
-    assert.ok(m(0.08) >= 0.07 * s.maxDist, `seed ${seed}: no splat at t=0.08`);
+    assert.ok(m(0.06) >= 0.15 * s.maxDist, `seed ${seed}: splat too small at t=0.06`);
     assert.ok(m(0.1) - m(0) > m(0.3) - m(0.1), `seed ${seed}: the splat should outrun the next stretch`);
   }
 });
@@ -139,5 +139,12 @@ test('the splat throws sharp spikes and flung droplets', () => {
     assert.ok((Math.max(...rs) - Math.min(...rs)) / mean > 0.5, `seed ${seed}: splat outline too smooth`);
     assert.ok(drops.length >= 8, `seed ${seed}: only ${drops.length} droplets at t=0.08`);
     for (const d of drops) assert.equal(inside(blob, d.x, d.y), false);
+  }
+});
+
+test('spreads quickly: well over a third of the way by half time', () => {
+  for (const seed of [1, 5, 9]) {
+    const s = createShape(seed, VIEW);
+    assert.ok(meanR(s.at(0.5).blob, 500, 300) >= 0.35 * s.maxDist, `seed ${seed}: too slow at half time`);
   }
 });

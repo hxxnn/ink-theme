@@ -83,17 +83,17 @@
     }
     // Accelerating front: a slow drop at first, then it keeps gaining speed.
     // The splat (SPLAT) lands instantly; the rest (1.06 - SPLAT) is the accelerating spread, so t = 1 still covers everything.
-    function frontR(p, t) { return maxDist * (SPLAT * burst(t) + (1.06 - SPLAT) * Math.pow(p, 2.2)); }
+    function frontR(p, t) { return maxDist * (SPLAT * burst(t) + (1.06 - SPLAT) * Math.pow(p, 1.4)); }
     function baseR(t) { return frontR(t, t); }
 
     // The moment the ink pot hits the ground: sharp splatter spikes and flung droplets around the impact.
-    var SPLAT = 0.1; // impact mark radius, as a fraction of maxDist
+    var SPLAT = 0.2; // impact mark radius, as a fraction of maxDist
     var splashRays = [];
-    for (var m = 0; m < 16; m++) splashRays.push({ a: rnd() * TAU, w: 0.025 + rnd() * 0.03, len: 0.5 + rnd() * 1.0 });
+    for (var m = 0; m < 16; m++) splashRays.push({ a: rnd() * TAU, w: 0.025 + rnd() * 0.035, len: 0.6 + rnd() * 1.1 });
     var splashDrops = [];
-    for (var m2 = 0; m2 < 14; m2++) splashDrops.push({ a: rnd() * TAU, r: 2 + rnd() * 5, off: 10 + rnd() * 0.16 * maxDist });
-    function burst(t) { return 1 - Math.pow(1 - clamp01(t / 0.08), 3); } // fast ease-out over the first 8%
-    function splashFade(t) { return 1 - step(0.08, 0.35, t); }
+    for (var m2 = 0; m2 < 14; m2++) splashDrops.push({ a: rnd() * TAU, r: 3 + rnd() * 7, off: 14 + rnd() * 0.26 * maxDist });
+    function burst(t) { return 1 - Math.pow(1 - clamp01(t / 0.05), 3); } // fast ease-out over the first 5%
+    function splashFade(t) { return 1 - step(0.06, 0.3, t); }
 
     function radius(theta, t) {
       var u = theta / TAU;
@@ -143,10 +143,10 @@
           drops.push({ x: cx + Math.cos(dd.a) * dist, y: cy + Math.sin(dd.a) * dist, r: dr });
         }
       }
-      if (t > 0 && t < 0.38) {
-        var da2 = TAU / N, fly = 1 - Math.pow(1 - clamp01(t / 0.25), 2);
+      if (t > 0 && t < 0.34) {
+        var da2 = TAU / N, fly = 1 - Math.pow(1 - clamp01(t / 0.18), 2);
         for (var k2 = 0; k2 < splashDrops.length; k2++) {
-          var sd = splashDrops[k2], sl = step(0.002, 0.03, t) * (1 - step(0.2, 0.38, t));
+          var sd = splashDrops[k2], sl = step(0.002, 0.02, t) * (1 - step(0.18, 0.34, t));
           var sr = sd.r * sl;
           if (sr < 0.4) continue;
           var sedge = Math.max(radius(sd.a - da2, t), radius(sd.a, t), radius(sd.a + da2, t));
@@ -290,7 +290,7 @@
       current = null;
     }
 
-    var duration = Number(opts.duration) > 0 ? Number(opts.duration) : 1800;
+    var duration = Number(opts.duration) > 0 ? Number(opts.duration) : 1400;
     var seed = isFinite(opts.seed) ? opts.seed | 0 : (Math.random() * 4294967296) | 0;
     var view = { x: Number(opts.x), y: Number(opts.y), width: root.innerWidth, height: root.innerHeight };
     var shape = shapeLib.createShape(seed, view);
