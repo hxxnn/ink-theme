@@ -68,9 +68,9 @@ test('x/y not finite falls back to the viewport center', () => {
   for (const [x, y] of blob) assert.ok(Math.hypot(x - 400, y - 200) <= 6);
 });
 
-test('spreads gently at first, like a drop soaking in', () => {
+test('after the splat it settles: still well short of the screen at a quarter of the time', () => {
   const s = createShape(5, VIEW);
-  assert.ok(meanR(s.at(0.25).blob, 500, 300) < 0.2 * s.maxDist);
+  assert.ok(meanR(s.at(0.25).blob, 500, 300) < 0.25 * s.maxDist);
 });
 
 test('keeps spreading steadily to the end (no stall in the last stretch)', () => {
@@ -99,7 +99,7 @@ test('the last corner is reached at the very end, not early', () => {
 test('accelerates hard: slow start, much faster finish', () => {
   const s = createShape(5, VIEW);
   const m = (t) => meanR(s.at(t).blob, 500, 300);
-  assert.ok(m(0.5) < 0.3 * s.maxDist, 'still under 30% of the way at half time');
+  assert.ok(m(0.5) < 0.4 * s.maxDist, 'still under 40% of the way at half time');
   assert.ok(m(1) - m(0.9) >= 2 * (m(0.4) - m(0.3)), 'last tenth moves at least twice as fast as the 0.3-0.4 stretch');
 });
 
@@ -120,4 +120,24 @@ test('different directions finish at different times', () => {
   };
   const times = [[0, 0], [1000, 0], [0, 600], [1000, 600]].map(([x, y]) => finish(x, y));
   assert.ok(Math.max(...times) - Math.min(...times) >= 0.03, `corners covered at ${times.join(', ')}`);
+});
+
+test('starts with a sudden splat: a big mark appears almost at once', () => {
+  for (const seed of [1, 5, 9]) {
+    const s = createShape(seed, VIEW);
+    const m = (t) => meanR(s.at(t).blob, 500, 300);
+    assert.ok(m(0.08) >= 0.07 * s.maxDist, `seed ${seed}: no splat at t=0.08`);
+    assert.ok(m(0.1) - m(0) > m(0.3) - m(0.1), `seed ${seed}: the splat should outrun the next stretch`);
+  }
+});
+
+test('the splat throws sharp spikes and flung droplets', () => {
+  for (const seed of [1, 5, 9]) {
+    const { blob, drops } = createShape(seed, VIEW).at(0.08);
+    const rs = blob.map(([x, y]) => Math.hypot(x - 500, y - 300));
+    const mean = rs.reduce((a, b) => a + b, 0) / rs.length;
+    assert.ok((Math.max(...rs) - Math.min(...rs)) / mean > 0.5, `seed ${seed}: splat outline too smooth`);
+    assert.ok(drops.length >= 8, `seed ${seed}: only ${drops.length} droplets at t=0.08`);
+    for (const d of drops) assert.equal(inside(blob, d.x, d.y), false);
+  }
 });

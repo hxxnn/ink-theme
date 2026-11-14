@@ -8,7 +8,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var N = 256; // sample angles; constant so frames interpolate smoothly
+  var N = 360; // sample angles; constant so frames interpolate smoothly
   var TAU = Math.PI * 2;
 
   function mulberry32(seed) {
@@ -81,14 +81,24 @@
       return LAG * (0.5 + 0.5 * (0.6 * pnoise(seed + 3, u, 4, 0) + 0.4 * pnoise(seed + 4, u, 11, 0)));
     }
     // Accelerating front: a slow drop at first, then it keeps gaining speed.
-    function frontR(p) { return maxDist * 1.06 * Math.pow(p, 2.2); }
-    function baseR(t) { return frontR(t); }
+    // The splat (SPLAT) lands instantly; the rest (1.06 - SPLAT) is the accelerating spread, so t = 1 still covers everything.
+    function frontR(p, t) { return maxDist * (SPLAT * burst(t) + (1.06 - SPLAT) * Math.pow(p, 2.2)); }
+    function baseR(t) { return frontR(t, t); }
+
+    // The moment the ink pot hits the ground: sharp splatter spikes and flung droplets around the impact.
+    var SPLAT = 0.1; // impact mark radius, as a fraction of maxDist
+    var splashRays = [];
+    for (var m = 0; m < 16; m++) splashRays.push({ a: rnd() * TAU, w: 0.025 + rnd() * 0.03, len: 0.5 + rnd() * 1.0 });
+    var splashDrops = [];
+    for (var m2 = 0; m2 < 14; m2++) splashDrops.push({ a: rnd() * TAU, r: 2 + rnd() * 5, off: 10 + rnd() * 0.16 * maxDist });
+    function burst(t) { return 1 - Math.pow(1 - clamp01(t / 0.08), 3); } // fast ease-out over the first 8%
+    function splashFade(t) { return 1 - step(0.08, 0.35, t); }
 
     function radius(theta, t) {
       var u = theta / TAU;
       var lag = lagAt(u);
       var p = clamp01((t - lag) / (1 - lag));
-      var R = frontR(p);
+      var R = frontR(p, t);
       // Fast-changing noise makes the edge surge and stall unpredictably; it relaxes only at the very end.
       var time = t * 3.2;
       var amp = 1 - step(0.8, 1, t);
@@ -99,6 +109,15 @@
         spike += tendrils[q].len * step(tendrils[q].at, tendrils[q].at + 0.18, t) * Math.exp(-d * d);
       }
       var r = R * (1 + amp * n + spike);
+      var fade = splashFade(t);
+      if (fade > 0) {
+        var ray = 0;
+        for (var w = 0; w < splashRays.length; w++) {
+          var dw = angDist(theta, splashRays[w].a) / splashRays[w].w;
+          ray += splashRays[w].len * Math.exp(-dw * dw);
+        }
+        r += maxDist * SPLAT * burst(t) * ray * fade;
+      }
       // Safety net for the final instant only.
       return Math.max(r, maxDist * 1.08 * step(0.97, 1, t));
     }
@@ -121,6 +140,17 @@
           var edge = Math.max(radius(dd.a - da, t), radius(dd.a, t), radius(dd.a + da, t));
           var dist = edge + dr + 3 + dd.off * (R / maxDist + 0.2);
           drops.push({ x: cx + Math.cos(dd.a) * dist, y: cy + Math.sin(dd.a) * dist, r: dr });
+        }
+      }
+      if (t > 0 && t < 0.38) {
+        var da2 = TAU / N, fly = 1 - Math.pow(1 - clamp01(t / 0.25), 2);
+        for (var k2 = 0; k2 < splashDrops.length; k2++) {
+          var sd = splashDrops[k2], sl = step(0.002, 0.03, t) * (1 - step(0.2, 0.38, t));
+          var sr = sd.r * sl;
+          if (sr < 0.4) continue;
+          var sedge = Math.max(radius(sd.a - da2, t), radius(sd.a, t), radius(sd.a + da2, t));
+          var sdist = sedge + sr + 3 + sd.off * fly;
+          drops.push({ x: cx + Math.cos(sd.a) * sdist, y: cy + Math.sin(sd.a) * sdist, r: sr });
         }
       }
       return { blob: blob, drops: drops };
