@@ -27,7 +27,7 @@ swatch.addEventListener('click', (e) => {
 | --- | --- | --- |
 | `x`, `y` | viewport centre | Where the ink starts (viewport CSS px). Invalid values fall back to the centre; values outside the viewport are clamped. |
 | `color` | `--ink-bleed-color`, else a shade of the new background | Colour of the rim that pools at the front. Must be `#rrggbb`; anything else is ignored. |
-| `duration` | `1400` | Milliseconds. |
+| `duration` | `1000` | Milliseconds. |
 | `seed` | random | Same seed, same shape. |
 | `reducedMotion` | follows the OS setting | `true` skips the animation. |
 

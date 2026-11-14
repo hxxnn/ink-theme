@@ -82,15 +82,15 @@
     }
     // Accelerating front: a slow drop at first, then it keeps gaining speed.
     // The splat (SPLAT) lands instantly; the rest (1.06 - SPLAT) is the accelerating spread, so t = 1 still covers everything.
-    function frontR(p, t) { return maxDist * (SPLAT * burst(t) + (1.06 - SPLAT) * Math.pow(p, 1.4)); }
+    function frontR(p, t) { return maxDist * (SPLAT * burst(t) + (1.06 - SPLAT) * Math.pow(p, 1.25)); }
     function baseR(t) { return frontR(t, t); }
 
     // The moment the ink pot hits the ground: sharp splatter spikes and flung droplets around the impact.
-    var SPLAT = 0.2; // impact mark radius, as a fraction of maxDist
+    var SPLAT = 0.14; // impact mark radius, as a fraction of maxDist
     var splashRays = [];
     for (var m = 0; m < 16; m++) splashRays.push({ a: rnd() * TAU, w: 0.025 + rnd() * 0.035, len: 0.6 + rnd() * 1.1 });
     var splashDrops = [];
-    for (var m2 = 0; m2 < 14; m2++) splashDrops.push({ a: rnd() * TAU, r: 3 + rnd() * 7, off: 14 + rnd() * 0.26 * maxDist });
+    for (var m2 = 0; m2 < 14; m2++) splashDrops.push({ a: rnd() * TAU, r: 3 + rnd() * 7, off: 12 + rnd() * 0.2 * maxDist });
     function burst(t) { return 1 - Math.pow(1 - clamp01(t / 0.05), 3); } // fast ease-out over the first 5%
     function splashFade(t) { return 1 - step(0.06, 0.3, t); }
 

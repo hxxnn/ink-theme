@@ -36,7 +36,7 @@
     b.style.setProperty('--sw-accent', p.accent);
     b.addEventListener('click', function (e) {
       var origin = BleedPalette.pointFrom(e);
-      BleedPalette.run(function () { apply(p); }, { x: origin.x, y: origin.y, color: p.accent, duration: 1400 });
+      BleedPalette.run(function () { apply(p); }, { x: origin.x, y: origin.y, color: p.accent, duration: 1000 });
     });
     palette.appendChild(b);
   });
