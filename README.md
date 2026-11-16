@@ -2,6 +2,8 @@
 
 Ink-bleed colour transitions for palette pickers. When the user picks a colour, the new look spreads from the click point like a drop of ink. No dependencies, one file, works with or without glass effects.
 
+![bleed-palette preview](docs/preview.gif)
+
 It is built on the [View Transitions API](https://developer.mozilla.org/docs/Web/API/View_Transition_API): the browser captures the old and new page itself, so glass cards (`backdrop-filter`), gradients and image backgrounds render correctly. The ink shape (blob, tendrils, droplets, coloured rim) is generated in JS from a seed.
 
 Inspired by the idea of ink-spread theme switches. This library is written from scratch and contains no code from other projects.
@@ -60,6 +62,8 @@ swatch.addEventListener('click', (e) => {
 npm run build   # src/*.js -> dist/bleed-palette.js
 npm test        # shape unit tests + Chromium browser tests (Playwright)
 ```
+
+`node scripts/record-preview.mjs` re-records `docs/preview.gif` from the demo (needs Playwright and ffmpeg).
 
 Open `demo/index.html` through any static server to try it, with toggles for glass, gradient and image backgrounds.
 
