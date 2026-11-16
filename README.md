@@ -1,5 +1,7 @@
 # bleed-palette
 
+**English** · [한국어](README.ko.md)
+
 Ink-bleed colour transitions for palette pickers. When the user picks a colour, the new look spreads from the click point like a drop of ink. No dependencies, one file, works with or without glass effects.
 
 ![bleed-palette preview](docs/preview.gif)
@@ -54,12 +56,12 @@ swatch.addEventListener('click', (e) => {
 - Elements that already have their own `view-transition-name` keep the browser's default cross-fade instead of being revealed by the ink (only the page root is). Avoid named elements during a palette change, or remove the name while `run` is active.
 - A new `run` during a running transition skips the old one; the last colour wins.
 - Works under a strict CSP (`img-src 'self' data:`, no `unsafe-inline`): styles are applied through adopted stylesheets and CSSOM, and no blob URLs are used.
-- Browsers: those with `document.startViewTransition` (current Chrome/Edge, Safari 18+, recent Firefox).
+- Browsers: those with `document.startViewTransition` (current Chrome/Edge, Safari 18+, recent Firefox). Only Chromium has been tested so far; please check Safari, Firefox and mobile yourself.
 
 ## Develop
 
 ```bash
-npm run build   # src/*.js -> dist/bleed-palette.js
+npm run build   # src/*.js -> dist/ (bleed-palette.js, .mjs, .d.ts)
 npm test        # shape unit tests + Chromium browser tests (Playwright)
 ```
 
