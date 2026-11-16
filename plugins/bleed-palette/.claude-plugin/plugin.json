@@ -1,0 +1,9 @@
+{
+  "name": "bleed-palette",
+  "version": "0.1.0",
+  "description": "Adds ink-bleed colour transitions to a website's palette picker. Ships the bleed-palette library and a skill that wires it into your project.",
+  "author": {
+    "name": "hxxnn"
+  },
+  "license": "MIT"
+}

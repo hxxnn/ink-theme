@@ -26,6 +26,19 @@ import BleedPalette, { run, cancel, pointFrom } from 'bleed-palette';
 
 `dist/` contains `bleed-palette.js` (script), `bleed-palette.mjs` (ES module) and `bleed-palette.d.ts` (types). To use it from npm, publish the package yourself (`npm publish`); nothing here does that for you.
 
+## Install as a Claude Code plugin
+
+If you use [Claude Code](https://code.claude.com), you can install bleed-palette as a plugin. It adds a skill that copies the library into your project and wires it into your palette picker for you:
+
+```
+/plugin marketplace add hxxnn/ink-theme
+/plugin install bleed-palette@hxxnn-plugins
+```
+
+On Claude Code 2.1.275 or later this also works in one step: `/plugin install bleed-palette --marketplace hxxnn/ink-theme`.
+
+Then ask Claude, for example "add the ink bleed transition to my theme picker", or run `/bleed-palette:add-to-site`. The plugin does not run on your website; it only helps Claude add `bleed-palette.js` to your code, and the site keeps working without the plugin installed. The marketplace is this repository (`.claude-plugin/marketplace.json`), so it must be reachable by whoever adds it (public, or accessible with their GitHub login).
+
 ## Use
 
 Wrap whatever code applies your colours:

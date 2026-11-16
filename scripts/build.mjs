@@ -25,3 +25,10 @@ fs.writeFileSync(
 
 // 3. Type definitions.
 fs.copyFileSync(path.join(root, 'src/bleed-palette.d.ts'), path.join(root, 'dist/bleed-palette.d.ts'));
+
+// 4. The Claude Code plugin ships the same files; keep its copy in sync.
+const libDir = path.join(root, 'plugins/bleed-palette/skills/add-to-site/lib');
+fs.mkdirSync(libDir, { recursive: true });
+for (const f of ['bleed-palette.js', 'bleed-palette.mjs', 'bleed-palette.d.ts']) {
+  fs.copyFileSync(path.join(root, 'dist', f), path.join(libDir, f));
+}

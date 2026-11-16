@@ -26,6 +26,19 @@ import BleedPalette, { run, cancel, pointFrom } from 'bleed-palette';
 
 `dist/` 폴더에는 `bleed-palette.js`(스크립트), `bleed-palette.mjs`(ES 모듈), `bleed-palette.d.ts`(타입)가 들어 있습니다. npm으로 받아 쓰려면 직접 `npm publish`로 배포하셔야 합니다. 이 저장소가 대신 배포해 주지는 않습니다.
 
+## Claude Code 플러그인으로 설치
+
+[Claude Code](https://code.claude.com)를 쓰신다면 플러그인으로 설치할 수 있습니다. 라이브러리를 프로젝트에 복사하고 팔레트 선택 코드에 연결하는 일을 Claude가 대신 해 주는 스킬이 들어 있습니다.
+
+```
+/plugin marketplace add hxxnn/ink-theme
+/plugin install bleed-palette@hxxnn-plugins
+```
+
+Claude Code 2.1.275 이상에서는 한 줄로도 됩니다: `/plugin install bleed-palette --marketplace hxxnn/ink-theme`
+
+설치한 뒤 Claude에게 "내 테마 선택기에 잉크 번짐 전환을 넣어줘"처럼 말하거나 `/bleed-palette:add-to-site`를 실행하세요. 이 플러그인이 웹사이트에서 실행되는 것은 아닙니다. Claude가 코드에 `bleed-palette.js`를 넣는 것을 도와줄 뿐이고, 플러그인을 지워도 사이트는 그대로 동작합니다. 마켓플레이스는 이 저장소(`.claude-plugin/marketplace.json`)이므로, 추가하는 사람이 접근할 수 있어야 합니다 (공개 저장소이거나, 본인의 GitHub 로그인으로 접근 가능해야 합니다).
+
 ## 사용법
 
 색을 적용하는 코드를 `run`으로 감싸면 됩니다.

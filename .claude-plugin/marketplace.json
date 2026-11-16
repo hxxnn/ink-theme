@@ -1,0 +1,14 @@
+{
+  "name": "hxxnn-plugins",
+  "description": "Plugins by hxxnn",
+  "owner": {
+    "name": "hxxnn"
+  },
+  "plugins": [
+    {
+      "name": "bleed-palette",
+      "source": "./plugins/bleed-palette",
+      "description": "Adds ink-bleed colour transitions (bleed-palette) to a website's palette picker"
+    }
+  ]
+}
