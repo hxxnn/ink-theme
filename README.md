@@ -29,9 +29,9 @@ swatch.addEventListener('click', (e) => {
 | `color` | `--ink-bleed-color`, else a shade of the new background | Colour of the rim that pools at the front. Must be `#rrggbb`; anything else is ignored. |
 | `duration` | `1000` | Milliseconds. |
 | `seed` | random | Same seed, same shape. |
-| `reducedMotion` | follows the OS setting | `true` skips the animation. |
+| `reducedMotion` | `'fade'` | What to do when the user prefers reduced motion: `'fade'` (a 0.2 s crossfade, no ink) or `'none'` (apply at once). `true` behaves like the preference is on; `false` ignores it and always bleeds. |
 
-`BleedPalette.supported` tells you whether the browser has View Transitions. Without it, or with "reduce motion" on, `applyFn` just runs immediately.
+`BleedPalette.supported` tells you whether the browser has View Transitions. Without it, `applyFn` just runs immediately. With "reduce motion" on, the ink is replaced by a short crossfade (or nothing, with `reducedMotion: 'none'`).
 
 ## Good to know
 

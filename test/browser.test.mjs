@@ -63,11 +63,45 @@ test('mid-transition the ink clip is active and is cleaned up after', async () =
   await ctx.close();
 });
 
-test('reduced motion applies instantly', async () => {
+test("reducedMotion: 'none' applies instantly under reduced motion", async () => {
   const { page, ctx } = await open('/test/fixtures/basic.html', { reducedMotion: 'reduce' });
-  const r = await page.evaluate(() => { BleedPalette.run(() => setBg('#00ff00')); return { overlay: !!document.getElementById('bp-overlay'), v: document.documentElement.style.getPropertyValue('--bg') }; });
-  assert.equal(r.overlay, false);
-  assert.equal(r.v, '#00ff00');
+  const r = await page.evaluate(() => {
+    BleedPalette.run(() => setBg('#00ff00'), { reducedMotion: 'none' });
+    return { overlay: !!document.getElementById('bp-overlay'), fade: document.documentElement.classList.contains('bp-fade'), v: document.documentElement.style.getPropertyValue('--bg') };
+  });
+  assert.deepEqual(r, { overlay: false, fade: false, v: '#00ff00' });
+  await ctx.close();
+});
+
+test('reduced motion gets a short crossfade instead of the ink by default', async () => {
+  const { page, ctx } = await open('/test/fixtures/basic.html', { reducedMotion: 'reduce' });
+  const mid = await page.evaluate(async () => {
+    const p = BleedPalette.run(() => setBg('#00ff00'), { x: 100, y: 100 });
+    await new Promise((r) => setTimeout(r, 60));
+    const info = {
+      fade: document.documentElement.classList.contains('bp-fade'),
+      overlay: !!document.getElementById('bp-overlay'),
+      dur: getComputedStyle(document.documentElement, '::view-transition-group(root)').animationDuration,
+    };
+    await p;
+    return info;
+  });
+  assert.deepEqual(mid, { fade: true, overlay: false, dur: '0.2s' });
+  assert.equal(await bg(page), 'rgb(0, 255, 0)');
+  assert.equal(await page.evaluate(() => document.documentElement.classList.contains('bp-fade')), false);
+  await ctx.close();
+});
+
+test('reducedMotion: false ignores the OS setting and bleeds', async () => {
+  const { page, ctx } = await open('/test/fixtures/basic.html', { reducedMotion: 'reduce' });
+  const overlay = await page.evaluate(async () => {
+    const p = BleedPalette.run(() => setBg('#00ff00'), { duration: 400, reducedMotion: false });
+    await new Promise((r) => setTimeout(r, 120));
+    const has = !!document.getElementById('bp-overlay');
+    await p;
+    return has;
+  });
+  assert.equal(overlay, true);
   await ctx.close();
 });
 

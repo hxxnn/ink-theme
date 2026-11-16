@@ -29,7 +29,9 @@
       ':root.bp-run::view-transition-group(root),:root.bp-run::view-transition-image-pair(root),:root.bp-run::view-transition-old(root),:root.bp-run::view-transition-new(root){animation:none;mix-blend-mode:normal}' +
       ':root.bp-run::view-transition-new(root){clip-path:var(--bp-clip)}' +
       ':root.bp-run::view-transition-group(bp-overlay),:root.bp-run::view-transition-old(bp-overlay),:root.bp-run::view-transition-new(bp-overlay){animation:none}' +
-      ':root.bp-run::view-transition-old(bp-overlay){display:none}'
+      ':root.bp-run::view-transition-old(bp-overlay){display:none}' +
+      // Reduced motion: the browser's own crossfade, just short.
+      ':root.bp-fade::view-transition-group(root){animation-duration:200ms}'
     );
     document.adoptedStyleSheets = document.adoptedStyleSheets.concat([sheet]);
   }
@@ -85,6 +87,7 @@
     if (current === run) {
       document.documentElement.style.removeProperty('--bp-clip');
       document.documentElement.classList.remove('bp-run');
+      document.documentElement.classList.remove('bp-fade');
       current = null;
     }
   }
@@ -94,10 +97,20 @@
     catch (e) { return Promise.reject(e); }
   }
 
+  // 'ink' (full effect), 'fade' (short crossfade) or 'none' (apply at once).
+  // `reducedMotion` says what to do when the user prefers reduced motion: 'fade' (default) or 'none'.
+  // true pretends the preference is on (fade); false ignores it (ink).
+  function motionMode(option) {
+    if (option === true) return 'fade';
+    if (option === false) return 'ink';
+    if (!prefersReducedMotion()) return 'ink';
+    return option === 'none' ? 'none' : 'fade';
+  }
+
   function run(applyFn, opts) {
     opts = opts || {};
-    var reduced = opts.reducedMotion === undefined ? prefersReducedMotion() : !!opts.reducedMotion;
-    if (!isSupported() || reduced) return applyNow(applyFn);
+    var mode = motionMode(opts.reducedMotion);
+    if (!isSupported() || mode === 'none') return applyNow(applyFn);
 
     installSheet();
     var prevDone = Promise.resolve();
@@ -107,6 +120,26 @@
       try { prev.vt.skipTransition(); } catch (e) { /* already finished */ }
       cleanup(prev);
       current = null;
+    }
+
+    if (mode === 'fade') {
+      var fadeRun = { raf: 0, keep: null, overlay: null, vt: null };
+      current = fadeRun;
+      try {
+        document.documentElement.classList.add('bp-fade');
+        fadeRun.vt = document.startViewTransition(function () { return prevDone.then(function () { return applyFn(); }); });
+      } catch (err) {
+        cleanup(fadeRun);
+        return Promise.reject(err);
+      }
+      fadeRun.vt.updateCallbackDone.catch(function () {});
+      fadeRun.vt.ready.catch(function () {});
+      return new Promise(function (resolve, reject) {
+        fadeRun.vt.finished.then(
+          function () { cleanup(fadeRun); resolve(); },
+          function (err) { cleanup(fadeRun); reject(err); }
+        );
+      });
     }
 
     var duration = Number(opts.duration) > 0 ? Number(opts.duration) : 1000;
