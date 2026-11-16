@@ -1,0 +1,11 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>esm</title>
+<style>html,body{margin:0;height:100%}body{background:var(--bg,#ffffff);min-height:100vh}</style></head>
+<body><p>hello</p>
+<script type="module">
+  import * as BP from '/dist/bleed-palette.mjs';
+  window.BP = BP;
+  window.setBg = (c) => document.documentElement.style.setProperty('--bg', c);
+  window.ready = true;
+</script>
+</body></html>

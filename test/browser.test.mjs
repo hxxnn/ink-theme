@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css' };
 
 let server, browser, base;
 test.before(async () => {
@@ -277,5 +277,76 @@ test('a synchronous startViewTransition failure rejects and leaves nothing behin
     cls: document.documentElement.classList.contains('bp-run'),
     clip: document.documentElement.style.getPropertyValue('--bp-clip'),
   })), { overlay: false, cls: false, clip: '' });
+  await ctx.close();
+});
+
+test('ES module build works and leaves no global behind', async () => {
+  const { page, ctx, errors } = await open('/test/fixtures/esm.html');
+  await page.waitForFunction(() => window.ready === true);
+  assert.equal(await page.evaluate(() => typeof window.BleedPalette), 'undefined');
+  assert.equal(await page.evaluate(() => BP.isSupported()), true);
+  await page.evaluate(() => BP.run(() => setBg('#00ff00'), { duration: 200 }));
+  assert.equal(await bg(page), 'rgb(0, 255, 0)');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('onStart runs before applyFn and onEnd after the transition', async () => {
+  const { page, ctx } = await open();
+  const log = await page.evaluate(async () => {
+    const l = [];
+    await BleedPalette.run(() => { l.push('apply'); setBg('#00ff00'); }, { duration: 200, onStart: () => l.push('start'), onEnd: () => l.push('end') });
+    return l;
+  });
+  assert.deepEqual(log, ['start', 'apply', 'end']);
+  await ctx.close();
+});
+
+test('onEnd also fires when applyFn throws, and a throwing callback does not break the run', async () => {
+  const { page, ctx } = await open();
+  const r = await page.evaluate(async () => {
+    let ended = 0;
+    try { await BleedPalette.run(() => { throw new Error('x'); }, { duration: 150, onEnd: () => { ended++; } }); } catch (e) { /* expected */ }
+    await BleedPalette.run(() => setBg('#00ff00'), { duration: 150, onStart: () => { throw new Error('cb'); } });
+    return ended;
+  });
+  assert.equal(r, 1);
+  assert.equal(await bg(page), 'rgb(0, 255, 0)');
+  await ctx.close();
+});
+
+test('callbacks also fire for the instant path', async () => {
+  const { page, ctx } = await open('/test/fixtures/basic.html', { reducedMotion: 'reduce' });
+  const log = await page.evaluate(async () => {
+    const l = [];
+    await BleedPalette.run(() => l.push('apply'), { reducedMotion: 'none', onStart: () => l.push('start'), onEnd: () => l.push('end') });
+    return l;
+  });
+  assert.deepEqual(log, ['start', 'apply', 'end']);
+  await ctx.close();
+});
+
+test('cancel() jumps to the end state, resolves the run, and fires onEnd once', async () => {
+  const { page, ctx } = await open();
+  const r = await page.evaluate(async () => {
+    let ended = 0;
+    const t0 = performance.now();
+    const p = BleedPalette.run(() => setBg('#00ff00'), { duration: 3000, onEnd: () => { ended++; } });
+    await new Promise((res) => setTimeout(res, 200));
+    BleedPalette.cancel();
+    await p;
+    return { ended, ms: performance.now() - t0 };
+  });
+  assert.equal(r.ended, 1);
+  assert.ok(r.ms < 1500, `cancel took ${r.ms}ms`);
+  assert.equal(await bg(page), 'rgb(0, 255, 0)');
+  assert.deepEqual(await leftovers(page), { clip: '', overlay: false });
+  await ctx.close();
+});
+
+test('cancel() with nothing running is harmless', async () => {
+  const { page, ctx, errors } = await open();
+  await page.evaluate(() => BleedPalette.cancel());
+  assert.deepEqual(errors, []);
   await ctx.close();
 });

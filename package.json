@@ -8,5 +8,22 @@
     "build": "node scripts/build.mjs",
     "test": "node --test \"test/*.test.*\""
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "module": "dist/bleed-palette.mjs",
+  "types": "dist/bleed-palette.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/bleed-palette.d.ts",
+      "import": "./dist/bleed-palette.mjs",
+      "default": "./dist/bleed-palette.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

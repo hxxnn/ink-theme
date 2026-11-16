@@ -1,9 +1,14 @@
 /* bleed-palette: ink-bleed palette transitions on the View Transitions API. MIT (c) 2026 hxxnn */
-(function (root) {
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory(root, require('./shape.js'));
+  } else {
+    var BP = (root.BleedPalette = root.BleedPalette || {});
+    Object.defineProperties(BP, Object.getOwnPropertyDescriptors(factory(root, BP._shape)));
+  }
+})(typeof self !== 'undefined' ? self : typeof globalThis !== 'undefined' ? globalThis : this, function (root, shapeLib) {
   'use strict';
 
-  var BP = (root.BleedPalette = root.BleedPalette || {});
-  var shapeLib = BP._shape;
   var HEX = /^#[0-9a-fA-F]{6}$/;
   var NS = 'http://www.w3.org/2000/svg';
   var current = null; // the run in flight, if any
@@ -92,6 +97,19 @@
     }
   }
 
+  function notify(fn) {
+    if (typeof fn !== 'function') return;
+    try { fn(); } catch (e) { if (root && root.console) root.console.error(e); }
+  }
+
+  // Jump straight to the end state of the running transition (its promise resolves, onEnd fires).
+  function cancel() {
+    if (!current) return;
+    var r = current;
+    try { r.vt.skipTransition(); } catch (e) { /* already finished */ }
+    cleanup(r);
+  }
+
   function applyNow(applyFn) {
     try { return Promise.resolve(applyFn()).then(function () {}); }
     catch (e) { return Promise.reject(e); }
@@ -110,7 +128,12 @@
   function run(applyFn, opts) {
     opts = opts || {};
     var mode = motionMode(opts.reducedMotion);
-    if (!isSupported() || mode === 'none') return applyNow(applyFn);
+    var ended = false;
+    function end() { if (!ended) { ended = true; notify(opts.onEnd); } }
+    notify(opts.onStart);
+    if (!isSupported() || mode === 'none') {
+      return applyNow(applyFn).then(end, function (err) { end(); throw err; });
+    }
 
     installSheet();
     var prevDone = Promise.resolve();
@@ -130,14 +153,15 @@
         fadeRun.vt = document.startViewTransition(function () { return prevDone.then(function () { return applyFn(); }); });
       } catch (err) {
         cleanup(fadeRun);
+        end();
         return Promise.reject(err);
       }
       fadeRun.vt.updateCallbackDone.catch(function () {});
       fadeRun.vt.ready.catch(function () {});
       return new Promise(function (resolve, reject) {
         fadeRun.vt.finished.then(
-          function () { cleanup(fadeRun); resolve(); },
-          function (err) { cleanup(fadeRun); reject(err); }
+          function () { cleanup(fadeRun); end(); resolve(); },
+          function (err) { cleanup(fadeRun); end(); reject(err); }
         );
       });
     }
@@ -157,6 +181,7 @@
       run.vt = document.startViewTransition(function () { return prevDone.then(function () { return applyFn(); }); });
     } catch (err) {
       cleanup(run);
+      end();
       return Promise.reject(err);
     }
     run.vt.updateCallbackDone.catch(function () {});
@@ -186,8 +211,8 @@
 
     return new Promise(function (resolve, reject) {
       run.vt.finished.then(
-        function () { cleanup(run); resolve(); },
-        function (err) { cleanup(run); reject(err); }
+        function () { cleanup(run); end(); resolve(); },
+        function (err) { cleanup(run); end(); reject(err); }
       );
     });
   }
@@ -208,7 +233,11 @@
     return { x: NaN, y: NaN };
   }
 
-  BP.run = run;
-  BP.pointFrom = pointFrom;
-  Object.defineProperty(BP, 'supported', { get: isSupported, enumerable: true, configurable: true });
-})(typeof self !== 'undefined' ? self : this);
+  return {
+    run: run,
+    cancel: cancel,
+    pointFrom: pointFrom,
+    isSupported: isSupported,
+    get supported() { return isSupported(); },
+  };
+});

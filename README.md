@@ -6,11 +6,23 @@ It is built on the [View Transitions API](https://developer.mozilla.org/docs/Web
 
 Inspired by the idea of ink-spread theme switches. This library is written from scratch and contains no code from other projects.
 
-## Use
+## Install
+
+Pick one:
 
 ```html
+<!-- plain script: adds window.BleedPalette -->
 <script src="dist/bleed-palette.js"></script>
 ```
+
+```js
+// ES module / bundler (no global is created). TypeScript types are included.
+import BleedPalette, { run, cancel, pointFrom } from 'bleed-palette';
+```
+
+`dist/` contains `bleed-palette.js` (script), `bleed-palette.mjs` (ES module) and `bleed-palette.d.ts` (types). To use it from npm, publish the package yourself (`npm publish`); nothing here does that for you.
+
+## Use
 
 Wrap whatever code applies your colours:
 
@@ -29,9 +41,10 @@ swatch.addEventListener('click', (e) => {
 | `color` | `--ink-bleed-color`, else a shade of the new background | Colour of the rim that pools at the front. Must be `#rrggbb`; anything else is ignored. |
 | `duration` | `1000` | Milliseconds. |
 | `seed` | random | Same seed, same shape. |
+| `onStart`, `onEnd` | none | Callbacks. `onStart` runs as `run` begins (before `applyFn`); `onEnd` runs once when the run is over: finished, cancelled, failed, or applied at once. An interrupted run still gets its own `onEnd`. A callback that throws is logged and ignored. |
 | `reducedMotion` | `'fade'` | What to do when the user prefers reduced motion: `'fade'` (a 0.2 s crossfade, no ink) or `'none'` (apply at once). `true` behaves like the preference is on; `false` ignores it and always bleeds. |
 
-`BleedPalette.supported` tells you whether the browser has View Transitions. Without it, `applyFn` just runs immediately. With "reduce motion" on, the ink is replaced by a short crossfade (or nothing, with `reducedMotion: 'none'`).
+`BleedPalette.cancel()` jumps the running transition to its end state (the promise resolves and `onEnd` fires). `BleedPalette.supported` (or `isSupported()`) tells you whether the browser has View Transitions. Without it, `applyFn` just runs immediately. With "reduce motion" on, the ink is replaced by a short crossfade (or nothing, with `reducedMotion: 'none'`).
 
 ## Good to know
 
